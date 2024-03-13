@@ -1,0 +1,11 @@
+setup.py
+hmmglm/__init__.py
+hmmglm/distributions.py
+hmmglm/inference.py
+hmmglm/model.py
+hmmglm/nonlinearities.py
+hmmglm/utils.py
+hmmglm.egg-info/PKG-INFO
+hmmglm.egg-info/SOURCES.txt
+hmmglm.egg-info/dependency_links.txt
+hmmglm.egg-info/top_level.txt
