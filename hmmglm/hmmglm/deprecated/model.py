@@ -1,12 +1,11 @@
-import numpy as np
-
-import torch
-from torch import nn
-import torch.nn.functional as F
-
 from abc import abstractmethod, abstractproperty
 
-from hmmglm import utils, distributions, nonlinearities
+import numpy as np
+import torch
+import torch.nn.functional as F
+from torch import nn
+
+from hmmglm.deprecated import distributions, nonlinearities
 
 
 class HMMGLM(nn.Module):

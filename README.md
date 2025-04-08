@@ -13,4 +13,8 @@ pip install -e .
 ```
 
 ## 2 Tutorial
-`demo.ipynb` is a step-by-step tutorial that run naive HMM-GLM, Gaussian HMM-GLM, and one-hot HMM-GLM on a synthetic dataset.
+[hmmglm/hmmglm/deprecated/demo.ipynb](hmmglm/hmmglm/deprecated/demo.ipynb) is a step-by-step tutorial that run naive HMM-GLM, Gaussian HMM-GLM, and one-hot HMM-GLM on a synthetic dataset.
+
+[experiments/synthetic.ipynb](experiments/synthetic.ipynb) is a step-by-step tutorial that run one-hot HMM-GLM (version 0.1.0) on a synthetic dataset.
+
+[experiments/pfc6.ipynb](experiments/pfc6.ipynb) is a step-by-step tutorial that run one-hot HMM-GLM (version 0.1.0) on the [CNCRS pfc-6](https://crcns.org/data-sets/pfc/pfc-6) dataset.
