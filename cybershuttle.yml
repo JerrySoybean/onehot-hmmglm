@@ -1,0 +1,40 @@
+project:
+  name: One-hot HMM-GLM.
+  version: 0.1.0
+  description: GLM with a one-hot prior on top of a hidden Markov model.
+  tags:
+    - neuroscience
+    - generalized_linear_models
+    - hidden_markov_models
+    - functional_connectivity_inference
+  homepage: https://github.com/BRAINML-GT/onehot-hmmglm
+
+workspace:
+  location: /workspace
+  resources:
+    min_cpu: 4
+    min_gpu: 0
+    min_mem: 4096
+    walltime: 60
+    cluster: Anvil
+    group: Cerebrum
+    queue: shared
+  model_collection:
+  data_collection:
+    - source: cybershuttle
+      identifier: 
+      mount_point: /data
+
+additional_dependencies:
+  conda:
+    - python
+    - pip
+    - ipywidgets
+    - numba
+    - numpy
+    - matplotlib
+    - pandas
+    - scipy
+    - tqdm
+    - torch
+  pip:

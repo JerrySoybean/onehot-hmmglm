@@ -1,0 +1,10 @@
+[project]
+name = "hmmglm"
+version = "0.1.0"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "matplotlib",
+    "torch",
+]
