@@ -1,8 +1,6 @@
-import lightning as L
 import pandas as pd
 import torch
 import torch.nn.functional as F
-import torch.nn.utils.parametrize as parametrize
 from torch import nn
 
 from hmmglm import distributions, inference

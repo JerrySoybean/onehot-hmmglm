@@ -1,4 +1,3 @@
-import lightning as L
 import matplotlib.pyplot as plt
 import pandas as pd
 import torch
@@ -6,7 +5,6 @@ import torch.nn.functional as F
 import torch.nn.utils.parametrize as parametrize
 from torch import nn
 
-from hmmglm import distributions, inference
 from hmmglm.models.naive import HMMGLM
 from hmmglm.models.parametrizefunc import Sigmoid, Softmax, Softplus
 
@@ -146,137 +144,4 @@ class OneHotHMMGLM(HMMGLM):
             x = x + self.bias.unsqueeze(1)
         x = self.activation(x)  # (..., n_states, n_time_bins, n_neurons)
         return x
-
-
-class LitOneHotHMMGLM(L.LightningModule):
-    def __init__(
-        self,
-        decoder: nn.Module,
-        learning_rate: float,
-        dataset_size: int,
-        forward_backward_every_n_epochs: int = 1,
-    ):
-        super().__init__()
-        self.decoder = decoder
-        self.learning_rate = learning_rate
-        self.dataset_size = dataset_size
-        self.forward_backward_every_n_epochs = forward_backward_every_n_epochs
-
-        self.gamma_list = [None for _ in range(self.dataset_size)]
-        self.xi_list = [None for _ in range(self.dataset_size)]
-
-        self.save_hyperparameters(ignore=["decoder"])
-
-    def training_step(self, batch, batch_idx):
-        idx = batch[0][0]
-        x = batch[1][0]  # (n_time_bins, n_neurons)
-        x_pred_mean = self.decoder(x)  # (n_states, n_time_bins, n_neurons)
-        emission_log_prob = (
-            distributions.poisson_log_likelihood(x[None, :, :], x_pred_mean)
-            .sum(dim=-1)
-            .T
-        )  # (n_time_bins, n_states)
-
-        if self.current_epoch % self.forward_backward_every_n_epochs == 0:
-            gamma, xi = inference.forward_backward(
-                emission_log_prob, self.decoder.transition_matrix, algorithm="logsumexp"
-            )
-            self.gamma_list[idx] = gamma
-            self.xi_list[idx] = xi
-
-        expected_log_prob = (
-            inference.baum_welch(
-                emission_log_prob,
-                self.decoder.transition_matrix,
-                self.gamma_list[idx],
-                self.xi_list[idx],
-            )
-            / x.shape[0]
-        )
-
-        adjacency = self.decoder.adjacency
-        log_adjacency = F.log_softmax(
-            self.decoder.parametrizations["adjacency"].original, dim=-1
-        )
-
-        if self.decoder.adjacency_distribution == "gumbel-softmax":
-            logit_adjacency_prior = self.decoder.logit_adjacency_prior.expand_as(
-                log_adjacency
-            )
-            adjacency_log_prob = distributions.gumbel_softmax_log_likelihood_log_input(
-                log_adjacency,
-                logit_adjacency_prior,
-                tau=0.5,
-            ).sum()
-        elif self.decoder.adjacency_distribution == "categorical":
-            log_adjacency_prior = F.log_softmax(
-                self.decoder.logit_adjacency_prior, dim=-1
-            ).expand_as(adjacency)
-            adjacency_log_prob = (adjacency * log_adjacency_prior).sum()
-        else:
-            raise ValueError(
-                f"Invalid adjacency_distribution: {self.decoder.adjacency_distribution}"
-            )
-
-        adjacency_entropy = -(adjacency * log_adjacency).sum()
-
-        loss = -expected_log_prob - adjacency_log_prob
-        if self.decoder.adjacency_distribution == "categorical":
-            loss += adjacency_entropy
-
-        self.log_dict(
-            {
-                "loss": loss.item(),
-                "expected_log_prob": expected_log_prob.item(),
-                "adjacency_log_prob": adjacency_log_prob.item(),
-                "adjacency_entropy": adjacency_entropy.item(),
-            },
-        )
-        return loss
-
-    def on_train_epoch_end(self):
-        self.decoder.parametrizations["adjacency"].original.data = F.log_softmax(
-            self.decoder.parametrizations["adjacency"].original.data, dim=-1
-        ).clamp(-20, 0)
-
-    def on_test_epoch_start(self):
-        self.df_result = pd.DataFrame(
-            columns=["conditional_log_prob", "firing_rates", "latents"],
-        )
-        self.df_result = self.df_result.astype(
-            {
-                "conditional_log_prob": float,
-            }
-        )
-
-    def test_step(self, batch, batch_idx):
-        idx = batch[0][0].item()
-        x = batch[1][0]  # (n_time_bins, n_neurons)
-        x_pred_mean = self.decoder(x)  # (n_states, n_time_bins, n_neurons)
-        emission_log_prob = (
-            distributions.poisson_log_likelihood(x[None, :, :], x_pred_mean)
-            .sum(dim=-1)
-            .T
-        )  # (n_time_bins, n_states)
-        inferred_states = inference.viterbi(
-            emission_log_prob, self.decoder.transition_matrix
-        )  # (n_time_bins,)
-        x_pred_mean = x_pred_mean[
-            inferred_states, torch.arange(len(x))
-        ]  # (n_time_bins, n_neurons)
-
-        # conditional_log_prob = distributions.poisson_log_likelihood(x, x_pred_mean).sum(
-        #     dim=-1
-        # )  # (n_time_bins,)
-        conditional_log_prob = emission_log_prob[torch.arange(len(x)), inferred_states]
-        self.df_result.at[idx, "conditional_log_prob"] = (
-            conditional_log_prob.mean().item()
-        )
-        self.df_result.at[idx, "firing_rates"] = x_pred_mean.to("cpu")
-        self.df_result.at[idx, "latents"] = inferred_states.to("cpu")
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
-        return optimizer
-
 
