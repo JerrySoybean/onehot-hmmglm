@@ -17,7 +17,7 @@ class Base(nn.Module):
             self.activation = F.softplus
         elif activation == "log1psoftplus":
             self.activation = lambda x: torch.log1p(F.softplus(x))
-        elif activation == "sigmomid":
+        elif activation == "sigmoid":
             self.activation = F.sigmoid
         elif activation == "sqrtsoftplus":
             self.activation = lambda x: torch.sqrt(F.softplus(x))

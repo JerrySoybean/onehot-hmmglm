@@ -15,26 +15,16 @@ workspace:
     min_cpu: 4
     min_gpu: 0
     min_mem: 4096
-    walltime: 60
-    cluster: Anvil
-    group: Cerebrum
-    queue: shared
   model_collection:
   data_collection:
     - source: cybershuttle
-      identifier: 
-      mount_point: /data
+      identifier: brainml-onehot-hmmglm
+      mount_point: /cybershuttle_data/brainml-onehot-hmmglm
 
 additional_dependencies:
   conda:
-    - python
+    - python=3.10
     - pip
     - ipywidgets
-    - numba
-    - numpy
-    - matplotlib
-    - pandas
-    - scipy
-    - tqdm
-    - torch
   pip:
+    - git+https://github.com/cyber-shuttle/onehot-hmmglm#subdirectory=hmmglm
